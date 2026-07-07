@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Quote Generator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg1: #0f2027;
+    --bg2: #203a43;
+    --bg3: #2c5364;
+    --card: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --subtext: #aab4be;
+    --border: rgba(255,255,255,0.12);
+    --accent: #00c9a7;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 16px 100px;
+    transition: background 0.8s ease;
+    color: var(--text);
+  }
+
+  /* Header */
+  h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: white;
+    text-align: center;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--subtext);
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  /* Category Filter */
+  .category-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 500px;
+    scrollbar-width: none;
+  }
+  .category-scroll::-webkit-scrollbar { display: none; }
+  .cat-btn {
+    border: none;
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: all 0.3s;
+  }
+  .cat-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    transform: scale(1.05);
+  }
+
+  /* Quote Card */
+  .quote-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 500px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+    margin-bottom: 20px;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .quote-mark {
+    font-size: 72px;
+    line-height: 1;
+    color: white;
+    opacity: 0.3;
+    font-family: Georgia, serif;
+    position: absolute;
+    top: 12px;
+    left: 20px;
+  }
+  .quote-text {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.7;
+    color: white;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-style: italic;
+    min-height: 80px;
+    transition: opacity 0.4s;
+  }
+  .quote-author {
+    text-align: right;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 16px;
+  }
+  .quote-category-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--subtext);
+  }
+
+  /* Action Buttons */
+  .action-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 14px;
+  }
+  .action-btn {
+    flex: 1;
+    border: none;
+    border-radius: 14px;
+    padding: 13px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .action-btn:active { transform: scale(0.96); }
+  .btn-new { background: var(--accent); color: white; }
+  .btn-fav { background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-fav.active { background: #ff6b6b; border-color: #ff6b6b; }
+  .btn-copy { background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-speak { background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-speak.speaking { background: #a29bfe; border-color: #a29bfe; }
+
+  /* Share Row */
+  .share-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 20px;
+  }
+  .share-btn {
+    flex: 1;
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .share-btn:active { transform: scale(0.96); }
+  .btn-twitter { background: #1da1f2; color: white; }
+  .btn-whatsapp { background: #25d366; color: white; }
+  .btn-copy2 { background: #6c5ce7; color: white; }
+
+  /* Quote Counter */
+  .quote-counter {
+    font-size: 12px;
+    color: var(--subtext);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  /* Favorites Section */
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .clear-fav-btn {
+    font-size: 12px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--subtext);
+    padding: 4px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .fav-list { width: 100%; max-width: 500px; }
+  .fav-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+    backdrop-filter: blur(8px);
+    position: relative;
+  }
+  .fav-text { font-size: 14px; font-style: italic; color: white; margin-bottom: 6px; }
+  .fav-author { font-size: 12px; color: var(--accent); font-weight: 600; }
+  .fav-remove {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: none;
+    border: none;
+    color: #ff6b6b;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .empty-fav {
+    text-align: center;
+    color: var(--subtext);
+    font-size: 13px;
+    padding: 20px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent);
+    color: white;
+    padding: 10px 22px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Tabs */
+  .page-tabs {
+    display: flex;
+    gap: 0;
+    width: 100%;
+    max-width: 500px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 20px;
+  }
+  .page-tab {
+    flex: 1;
+    text-align: center;
+    padding: 9px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--subtext);
+    transition: all 0.3s;
+  }
+  .page-tab.active { background: var(--accent); color: white; }
+</style>
+</head>
+<body>
+
+<h1>💬 Quote Generator</h1>
+<p class="subtitle">Daily inspiration at your fingertips ✨</p>
+
+<!-- Page Tabs -->
+<div class="page-tabs">
+  <div class="page-tab active" onclick="showTab('quotes', this)">💬 Quotes</div>
+  <div class="page-tab" onclick="showTab('favorites', this)">❤️ Favorites</div>
+</div>
+
+<!-- QUOTES PAGE -->
+<div id="tab-quotes">
+  <!-- Category Filter -->
+  <div class="category-scroll" id="categoryRow"></div>
+
+  <!-- Quote Card -->
+  <div class="quote-card" id="quoteCard">
+    <div class="quote-mark">"</div>
+    <div class="quote-text" id="quoteText">Click "New Quote" to get inspired!</div>
+    <div class="quote-author" id="quoteAuthor">— Author</div>
+    <span class="quote-category-tag" id="quoteCatTag">Category</span>
+  </div>
+
+  <!-- Quote Counter -->
+  <div class="quote-counter" id="quoteCounter"></div>
+
+  <!-- Action Buttons -->
+  <div class="action-row">
+    <button class="action-btn btn-new" onclick="newQuote()">🔀 New Quote</button>
+    <button class="action-btn btn-fav" id="favBtn" onclick="toggleFavorite()">❤️ Save</button>
+    <button class="action-btn btn-copy" onclick="copyQuote()">📋 Copy</button>
+    <button class="action-btn btn-speak" id="speakBtn" onclick="speakQuote()">🔊 Read</button>
+  </div>
+
+  <!-- Share Row -->
+  <div class="share-row">
+    <button class="share-btn btn-twitter" onclick="shareTwitter()">🐦 Twitter</button>
+    <button class="share-btn btn-whatsapp" onclick="shareWhatsapp()">💬 WhatsApp</button>
+    <button class="share-btn btn-copy2" onclick="copyQuote()">📋 Copy Text</button>
+  </div>
+</div>
+
+<!-- FAVORITES PAGE -->
+<div id="tab-favorites" style="display:none; width:100%; max-width:500px;">
+  <div class="section-title">
+    <span>❤️ Saved Quotes</span>
+    <button class="clear-fav-btn" onclick="clearFavorites()">Clear All</button>
+  </div>
+  <div class="fav-list" id="favList"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ---- QUOTES DATA ----
+  const quotes = [
+    // Motivation
+    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs", category: "Motivation" },
+    { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius", category: "Motivation" },
+    { text: "Success is not final, failure is not fatal: It is the courage to continue that counts.", author: "Winston Churchill", category: "Motivation" },
+    { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt", category: "Motivation" },
+    { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson", category: "Motivation" },
+
+    // Wisdom
+    { text: "The only true wisdom is in knowing you know nothing.", author: "Socrates", category: "Wisdom" },
+    { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein", category: "Wisdom" },
+    { text: "Life is what happens when you're busy making other plans.", author: "John Lennon", category: "Wisdom" },
+    { text: "The journey of a thousand miles begins with one step.", author: "Lao Tzu", category: "Wisdom" },
+    { text: "Be yourself; everyone else is already taken.", author: "Oscar Wilde", category: "Wisdom" },
+
+    // Success
+    { text: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau", category: "Success" },
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain", category: "Success" },
+    { text: "Don't be afraid to give up the good to go for the great.", author: "John D. Rockefeller", category: "Success" },
+    { text: "I find that the harder I work, the more luck I seem to have.", author: "Thomas Jefferson", category: "Success" },
+    { text: "Opportunities don't happen. You create them.", author: "Chris Grosser", category: "Success" },
+
+    // Life
+    { text: "Life is short, and it is here to be lived.", author: "Kate Winslet", category: "Life" },
+    { text: "The purpose of our lives is to be happy.", author: "Dalai Lama", category: "Life" },
+    { text: "Get busy living or get busy dying.", author: "Stephen King", category: "Life" },
+    { text: "You only live once, but if you do it right, once is enough.", author: "Mae West", category: "Life" },
+    { text: "Live in the sunshine, swim the sea, drink the wild air.", author: "Ralph Waldo Emerson", category: "Life" },
+
+    // Technology
+    { text: "Any sufficiently advanced technology is indistinguishable from magic.", author: "Arthur C. Clarke", category: "Technology" },
+    { text: "The computer was born to solve problems that did not exist before.", author: "Bill Gates", category: "Technology" },
+    { text: "It's not a bug – it's an undocumented feature.", author: "Anonymous", category: "Technology" },
+    { text: "Data is the new oil.", author: "Clive Humby", category: "Technology" },
+    { text: "The best way to predict the future is to invent it.", author: "Alan Kay", category: "Technology" },
+
+    // Happiness
+    { text: "Happiness is not something readymade. It comes from your own actions.", author: "Dalai Lama", category: "Happiness" },
+    { text: "For every minute you are angry you lose sixty seconds of happiness.", author: "Ralph Waldo Emerson", category: "Happiness" },
+    { text: "Happiness depends upon ourselves.", author: "Aristotle", category: "Happiness" },
+    { text: "The most wasted of days is one without laughter.", author: "E.E. Cummings", category: "Happiness" },
+    { text: "Count your age by friends, not years. Count your life by smiles, not tears.", author: "John Lennon", category: "Happiness" },
+  ];
+
+  // ---- CATEGORY COLORS ----
+  const catColors = {
+    'All': ['#0f2027','#203a43','#2c5364'],
+    'Motivation': ['#1a1a2e','#16213e','#0f3460'],
+    'Wisdom': ['#1b2838','#2d3561','#c84b31'],
+    'Success': ['#0d0d0d','#1a1a2a','#c9a227'],
+    'Life': ['#134e5e','#71b280','#1a3a2a'],
+    'Technology': ['#0f0c29','#302b63','#24243e'],
+    'Happiness': ['#834d9b','#d04ed6','#4a1942'],
+  };
+
+  let currentCategory = 'All';
+  let currentQuote = null;
+  let favorites = JSON.parse(localStorage.getItem('quoteFavs')) || [];
+  let isSpeaking = false;
+
+  // ---- INIT ----
+  function init() {
+    renderCategories();
+    newQuote();
+  }
+
+  // ---- CATEGORIES ----
+  function renderCategories() {
+    const row = document.getElementById('categoryRow');
+    const cats = ['All', ...new Set(quotes.map(q => q.category))];
+    row.innerHTML = cats.map(c =>
+      `<button class="cat-btn ${c === currentCategory ? 'active' : ''}" onclick="setCategory('${c}')">${c}</button>`
+    ).join('');
+  }
+
+  function setCategory(cat) {
+    currentCategory = cat;
+    renderCategories();
+    newQuote();
+    applyBgColor(cat);
+  }
+
+  function applyBgColor(cat) {
+    const colors = catColors[cat] || catColors['All'];
+    document.body.style.background = `linear-gradient(135deg, ${colors[0]}, ${colors[1]}, ${colors[2]})`;
+  }
+
+  // ---- QUOTE ----
+  function newQuote() {
+    const filtered = currentCategory === 'All' ? quotes : quotes.filter(q => q.category === currentCategory);
+    const randomIndex = Math.floor(Math.random() * filtered.length);
+    currentQuote = filtered[randomIndex];
+
+    const textEl = document.getElementById('quoteText');
+    textEl.style.opacity = 0;
+    setTimeout(() => {
+      textEl.textContent = `"${currentQuote.text}"`;
+      textEl.style.opacity = 1;
+      textEl.style.transition = 'opacity 0.4s';
+    }, 200);
+
+    document.getElementById('quoteAuthor').textContent = `— ${currentQuote.author}`;
+    document.getElementById('quoteCatTag').textContent = `📂 ${currentQuote.category}`;
+
+    // Restart card animation
+    const card = document.getElementById('quoteCard');
+    card.style.animation = 'none';
+    setTimeout(() => card.style.animation = 'fadeIn 0.5s ease', 10);
+
+    // Update counter
+    const catCount = currentCategory === 'All' ? quotes.length : quotes.filter(q => q.category === currentCategory).length;
+    document.getElementById('quoteCounter').textContent = `${catCount} quotes in ${currentCategory}`;
+
+    // Update fav button
+    updateFavBtn();
+
+    // Stop speech if running
+    if (isSpeaking) stopSpeech();
+
+    applyBgColor(currentQuote.category);
+  }
+
+  // ---- FAVORITES ----
+  function toggleFavorite() {
+    if (!currentQuote) return;
+    const key = currentQuote.text;
+    const idx = favorites.findIndex(f => f.text === key);
+    if (idx === -1) {
+      favorites.push(currentQuote);
+      showToast('❤️ Saved to favorites!');
+    } else {
+      favorites.splice(idx, 1);
+      showToast('💔 Removed from favorites!');
+    }
+    localStorage.setItem('quoteFavs', JSON.stringify(favorites));
+    updateFavBtn();
+  }
+
+  function updateFavBtn() {
+    const btn = document.getElementById('favBtn');
+    if (!currentQuote) return;
+    const isFav = favorites.some(f => f.text === currentQuote.text);
+    btn.classList.toggle('active', isFav);
+    btn.textContent = isFav ? '❤️ Saved' : '❤️ Save';
+  }
+
+  function renderFavorites() {
+    const list = document.getElementById('favList');
+    if (favorites.length === 0) {
+      list.innerHTML = '<div class="empty-fav">No favorites yet!<br>Tap ❤️ Save on any quote 😊</div>';
+      return;
+    }
+    list.innerHTML = favorites.map((f, i) => `
+      <div class="fav-item">
+        <div class="fav-text">"${f.text}"</div>
+        <div class="fav-author">— ${f.author} · ${f.category}</div>
+        <button class="fav-remove" onclick="removeFav(${i})">🗑️</button>
+      </div>
+    `).join('');
+  }
+
+  function removeFav(i) {
+    favorites.splice(i, 1);
+    localStorage.setItem('quoteFavs', JSON.stringify(favorites));
+    renderFavorites();
+    showToast('🗑️ Removed!');
+  }
+
+  function clearFavorites() {
+    if (!confirm('Clear all favorites?')) return;
+    favorites = [];
+    localStorage.setItem('quoteFavs', JSON.stringify(favorites));
+    renderFavorites();
+    showToast('🗑️ Favorites cleared!');
+  }
+
+  // ---- COPY ----
+  function copyQuote() {
+    if (!currentQuote) return;
+    const text = `"${currentQuote.text}" — ${currentQuote.author}`;
+    navigator.clipboard.writeText(text).then(() => showToast('📋 Copied to clipboard!'));
+  }
+
+  // ---- SPEECH ----
+  function speakQuote() {
+    if (!currentQuote) return;
+    if (isSpeaking) { stopSpeech(); return; }
+    const utterance = new SpeechSynthesisUtterance(`${currentQuote.text}. By ${currentQuote.author}`);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.onstart = () => {
+      isSpeaking = true;
+      document.getElementById('speakBtn').classList.add('speaking');
+      document.getElementById('speakBtn').textContent = '🔇 Stop';
+    };
+    utterance.onend = () => {
+      isSpeaking = false;
+      document.getElementById('speakBtn').classList.remove('speaking');
+      document.getElementById('speakBtn').textContent = '🔊 Read';
+    };
+    speechSynthesis.speak(utterance);
+  }
+
+  function stopSpeech() {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+    document.getElementById('speakBtn').classList.remove('speaking');
+    document.getElementById('speakBtn').textContent = '🔊 Read';
+  }
+
+  // ---- SHARE ----
+  function shareTwitter() {
+    if (!currentQuote) return;
+    const text = encodeURIComponent(`"${currentQuote.text}" — ${currentQuote.author}`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+  }
+
+  function shareWhatsapp() {
+    if (!currentQuote) return;
+    const text = encodeURIComponent(`"${currentQuote.text}" — ${currentQuote.author}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  }
+
+  // ---- TABS ----
+  function showTab(tab, el) {
+    document.getElementById('tab-quotes').style.display = tab === 'quotes' ? 'block' : 'none';
+    document.getElementById('tab-favorites').style.display = tab === 'favorites' ? 'block' : 'none';
+    document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (tab === 'favorites') renderFavorites();
+  }
+
+  // ---- TOAST ----
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  init();
+</script>
+</body>
+</html>
